@@ -1,8 +1,8 @@
 ---
-GDPOPS: Ground Decompositional Partial Order Plan Scheduler
+VH-DPOCL: Versatile Heuristic Decompositional Partial Order Causal Link Planner
 ---
 
-A hierarchical planning and scheduling system. Receives a planning problem with a domain that includes hierarchical (i.e. composite) action schemata, and produces a hierarchical plan that solves the problem. Created for the application of film directing. Composite actions represent character actions and camera shots. Actions must be scheduled relative to camera shots, allowing sub-intervals of an action to be executed in any sequence.
+A decompositional variant of the VHPOP planner, Younes and Simmons 2002. 
 
 ---
 David R. Winer
