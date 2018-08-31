@@ -7,6 +7,7 @@ using Priority_Queue;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace BoltFreezer.PlanSpace
 {
@@ -152,6 +153,7 @@ namespace BoltFreezer.PlanSpace
                     {
                         Depth = oc.step.Depth
                     };
+                    planClone.Hdepth += compCndt.SubSteps.Count;
                 }
                 else
                 {
@@ -207,10 +209,12 @@ namespace BoltFreezer.PlanSpace
                 {
                     if (CacheMaps.IsCndt(oc.precondition, step))
                     {
-
+                        
                         var stepAsComposite = step as CompositePlanStep;
 
-                        if (stepAsComposite.SubSteps.Contains(oc.step))
+                        
+
+                        if (stepAsComposite.SubSteps.Contains(oc.step) || stepAsComposite.GoalStep.ID == oc.step.ID)
                         {
                             continue;
                         }
@@ -221,8 +225,11 @@ namespace BoltFreezer.PlanSpace
                         if (plan.Orderings.IsPath(oc.step, stepAsComposite.InitialStep))
                             continue;
 
+
                         var planClone = plan.Clone() as IPlan;
-                        planClone.Repair(oc, stepAsComposite.GoalStep);
+                        var stepAsCompositeClone = planClone.Steps.First(s => s.ID == stepAsComposite.ID) as CompositePlanStep;
+
+                        planClone.Repair(oc, stepAsCompositeClone);
                         planClone.ID += "rc";
                         Insert(planClone);
                     }

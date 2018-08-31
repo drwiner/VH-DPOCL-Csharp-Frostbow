@@ -235,6 +235,7 @@ namespace BoltFreezer.PlanTools
 
         public void InsertDecomp(ICompositePlanStep newStep)
         {
+            this.hdepth += newStep.SubSteps.Count;
             decomps += 1;
             var IDMap = new Dictionary<int, IPlanStep>();
 
@@ -318,10 +319,10 @@ namespace BoltFreezer.PlanTools
 
                     InsertPrimitiveSubstep(newsubstep, dummyInit.Effects, false);
                     
-                    if (newsubstep.Depth > Hdepth)
-                    {
-                        Hdepth = newsubstep.Depth;
-                    }
+                    //if (newsubstep.Depth > Hdepth)
+                    //{
+                    //    Hdepth = newsubstep.Depth;
+                    //}
                 }
             }
 

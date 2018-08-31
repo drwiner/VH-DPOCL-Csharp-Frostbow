@@ -302,7 +302,7 @@ namespace BoltFreezer.PlanTools
                         {
                             // clone composite task
                             var comp = compositepair.Key.PseudoClone();
-
+                            comp.Name = decomp.Name;
                             // Set height of composite step
                             comp.Height = h + 1;
 
@@ -319,13 +319,14 @@ namespace BoltFreezer.PlanTools
                             {
                                 // Remove unbound args
                                 comp.RemoveRemainingArgs();
+                                
                                 compList.Add(comp);
                             }
                         }
                     }
                     // For each newly created composite step, add to the library.
                     foreach (var comp in compList)
-                    {
+                    { 
                         GroundActionFactory.InsertOperator(comp as IOperator);
                     }
                 }

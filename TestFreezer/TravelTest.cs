@@ -137,8 +137,8 @@ namespace TestFreezer
             var deplaneTerms = new List<ITerm>() { objTerms[0], objTerms[3], objTerms[2] };
 
 
-            var buy = new PlanStep(new Operator(new Predicate("buy", buyTerms, true)));
-            var board = new PlanStep(new Operator(new Predicate("board", boardTerms, true)));
+            var buy = new PlanStep(new Operator(new Predicate("buy-tickets", buyTerms, true)));
+            var board = new PlanStep(new Operator(new Predicate("board-plane", boardTerms, true)));
             var fly = new PlanStep(new Operator(new Predicate("fly", flyTerms, true)));
             var deplane = new PlanStep(new Operator(new Predicate("deplane", deplaneTerms, true)));
 
@@ -164,7 +164,10 @@ namespace TestFreezer
             };
 
             var root = new Operator(new Predicate("travel-by-plane", objTerms, true));
-            var decomp = new Decomposition(root, litTerms, substeps, suborderings, sublinks);
+            var decomp = new Decomposition(root, litTerms, substeps, suborderings, sublinks)
+            {
+                NonEqualities = new List<List<ITerm>>() { new List<ITerm>() { objTerms[1], objTerms[2] } }
+            };
             return decomp;
         }
 
