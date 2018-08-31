@@ -43,6 +43,11 @@ namespace BoltFreezer.PlanTools
             set { steps = value; }
         }
 
+        public IPlanStep GetStepByID(int id)
+        {
+            return steps.Single(s => s.ID == id);
+        }
+
         // Access the plan's initial state.
         public IState Initial
         {
@@ -283,13 +288,17 @@ namespace BoltFreezer.PlanTools
                         Depth = newStep.Depth + 1
                     };
 
+                    newSubSteps.Add(compositeSubStep);
+                    decomplinks.Insert(newStep, compositeSubStep);
+                    Insert(compositeSubStep);
+
                     Orderings.Insert(compositeSubStep.GoalStep, dummyGoal);
                     Orderings.Insert(dummyInit, compositeSubStep.InitialStep);
+
                     IDMap[substep.ID] = compositeSubStep;
+
                     compositeSubStep.InitialStep.InitCndt = dummyInit;
-                    newSubSteps.Add(compositeSubStep);
-                    Insert(compositeSubStep);
-                    // Don't bother updating hdepth yet because we will check on recursion
+                    compositeSubStep.GoalStep.GoalCndt = dummyGoal;
                 }
                 else
                 {
@@ -297,11 +306,16 @@ namespace BoltFreezer.PlanTools
                     {
                         Depth = newStep.Depth + 1
                     };
+
                     Orderings.Insert(newsubstep, dummyGoal);
                     Orderings.Insert(dummyInit, newsubstep);
                     IDMap[substep.ID] = newsubstep;
                     newSubSteps.Add(newsubstep);
                     newsubstep.InitCndt = dummyInit;
+                    newsubstep.GoalCndt = dummyGoal;
+
+                    decomplinks.Insert(newStep, newsubstep);
+
                     InsertPrimitiveSubstep(newsubstep, dummyInit.Effects, false);
                     
                     if (newsubstep.Depth > Hdepth)
@@ -399,15 +413,7 @@ namespace BoltFreezer.PlanTools
                         }
                     }
 
-                    if (step.Height > 0)
-                    {
-                        // Then we need to dig deeper to find the step that threatens
-                        DecomposeThreat(clink, step as ICompositePlanStep);
-                    }
-                    else
-                    {
-                        Flaws.Add(new ThreatenedLinkFlaw(newclink, step));
-                    }
+                    Flaws.Add(new ThreatenedLinkFlaw(newclink, step));
                 }
             }
 
@@ -440,169 +446,38 @@ namespace BoltFreezer.PlanTools
             return Steps.Single(s => s.Equals(stepClonedFromOpenCondition));
         }
 
-        // This method is used when a composite step may threaten a causal link.
-        protected void DecomposeThreat(CausalLink<IPlanStep> causalLink, ICompositePlanStep ThisIsAThreat)
-        {
-            //if (CacheMaps.IsThreat(causalLink.Predicate, ThisIsAThreat))
-            //{
-            //    Flaws.Add(new ThreatenedLinkFlaw(causalLink, ThisIsAThreat.GoalStep));
-            //    return;
-            //}
+        //// This method is used when a composite step may threaten a causal link.
+        //protected void DecomposeThreat(CausalLink<IPlanStep> causalLink, ICompositePlanStep ThisIsAThreat)
+        //{
+        //    //if (CacheMaps.IsThreat(causalLink.Predicate, ThisIsAThreat))
+        //    //{
+        //    //    Flaws.Add(new ThreatenedLinkFlaw(causalLink, ThisIsAThreat.GoalStep));
+        //    //    return;
+        //    //}
 
-            foreach (var substep in ThisIsAThreat.SubSteps)
-            {
-                
-                if (substep.Height > 0)
-                {
-                    //var compositeSubStep = substep as ICompositePlanStep;
-                    DecomposeThreat(causalLink, substep as ICompositePlanStep);
-                }
-                else
-                {
-                    if (substep.Equals(causalLink.Head) || substep.Equals(causalLink.Tail))
-                    {
-                        continue;
-                    }
-                    if (!CacheMaps.IsThreat(causalLink.Predicate, substep))
-                    {
-                        continue;
-                    }
+        //    foreach (var substep in ThisIsAThreat.SubSteps)
+        //    {
 
-                    Flaws.Add(new ThreatenedLinkFlaw(causalLink, substep));
-                }
-            }
-        }
+        //        if (substep.Height > 0)
+        //        {
+        //            //var compositeSubStep = substep as ICompositePlanStep;
+        //            DecomposeThreat(causalLink, substep as ICompositePlanStep);
+        //        }
+        //        else
+        //        {
+        //            if (substep.Equals(causalLink.Head) || substep.Equals(causalLink.Tail))
+        //            {
+        //                continue;
+        //            }
+        //            if (!CacheMaps.IsThreat(causalLink.Predicate, substep))
+        //            {
+        //                continue;
+        //            }
 
-
-        public void DetectThreats(IPlanStep possibleThreat)
-        {
-            ICompositePlanStep possibleThreatComposite = new CompositePlanStep();
-            if (possibleThreat.Height > 0)
-            {
-                possibleThreatComposite = possibleThreat as ICompositePlanStep;
-            }
-
-            foreach (var clink in causalLinks)
-            {
-
-                if (!CacheMaps.IsThreat(clink.Predicate, possibleThreat))
-                {
-                    continue;
-                }
-
-                if (possibleThreat.Height > 0)
-                {
-
-
-
-                    //if (OnDecompPath(clink.Tail, possibleThreat.ID))
-                    //{
-                    //    var tailRoot = GetDecompRoot(clink.Tail) as CompositePlanStep;
-                    //    Orderings.Insert(tailRoot.GoalStep, possibleThreatComposite.GoalStep);
-                    //    // just check if causal link between repairstep goal and step goal is threatened
-                    //    continue;
-                    //    //  Console.WriteLine("here");
-                    //}
-
-                    //if (clink.Head.Parent != null && clink.Head.Parent.Equals(possibleThreat))  //.SubSteps.Contains(clink.Head) || stepAsComp.SubSteps.Contains(clink.Tail))
-                    //{
-                    //    continue;
-                    //    // replace this with... is Decompositional Link-based path from step to clink.Head or clink.Tail
-                    //}
-
-                    //if (clink.Tail.Parent != null && clink.Tail.Parent.Equals(possibleThreat))
-                    //{
-                    //    continue;
-                    //}
-
-
-                    //if (threatInit.Equals(clink.Head) || threatInit.Equals(clink.Head) || threatGoal.Equals(clink.Tail) || threatInit.Equals(clink.Tail))
-                    //{
-                    //    continue;
-                    //}
-
-                    if (OnDecompPath(clink.Head, possibleThreat.ID))
-                    {
-                        // must be ordered within 
-                        if (Orderings.IsPath(clink.Tail, possibleThreatComposite.GoalStep))
-                        {
-                            // already tucked into Q's borders
-                            continue;
-                        }
-
-                        if (!OnDecompPath(clink.Tail, possibleThreat.ID))
-                        {
-                            // Q --> s -p-> t, not p in eff(Q), not Q --> t
-                            // then, need to tuck t into Q's borders.
-                            var tailRoot = GetDecompRoot(clink.Tail) as CompositePlanStep;
-                            Orderings.Insert(tailRoot.GoalStep, possibleThreatComposite.InitialStep);
-                        }
-
-                        continue;
-                    }
-
-                    if (OnDecompPath(clink.Tail, possibleThreat.ID))
-                    {
-                        continue;
-                    }
-
-                    if (Orderings.IsPath(clink.Tail, possibleThreatComposite.InitialStep))
-                    {
-                        continue;
-                    }
-                    if (Orderings.IsPath(possibleThreatComposite.GoalStep, clink.Head))
-                    {
-                        continue;
-                    }
-                    Flaws.Add(new ThreatenedLinkFlaw(clink, possibleThreat));
-
-                    //foreach (var precon in threatGoal.Preconditions)
-                    //{
-                    //    if (precon.Equals(clink.Predicate.GetReversed()))
-                    //    {
-                    //        // then this composite step is a threat.
-                    //        Flaws.Add(new ThreatenedLinkFlaw(clink, possibleThreat));
-                    //        //Flaws.Add(new ThreatenedLinkFlaw(clink, threatGoal));
-                    //        break;
-                    //    }
-                    //}
-
-                    //if (CacheMaps.IsThreat(clink.Predicate, possibleThreat))
-                    //{
-                    //    // no need to decompose if this composite step is the explicit threat.
-                    //    Flaws.Add(new ThreatenedLinkFlaw(clink, threatGoal));
-                    //    return;
-                    //}
-
-                    // Now we need to consider all sub-steps since any one of them could interfere.
-                    //DecomposeThreat(clink, possibleThreatComposite);
-                }
-                else
-                {
-                    // don't need to check decomp paths, because causal links and threat are all primitive. 
-
-                    //if (OnDecompPath(possibleThreat, clink.Head.Parent.ID))
-                    //{
-                    //    continue;
-                    //}
-                    //if (OnDecompPath(possibleThreat, clink.Tail.Parent.ID))
-                    //{
-                    //    continue;
-                    //}
-                    if (Orderings.IsPath(clink.Tail, possibleThreat))
-                    {
-                        continue;
-                    }
-                    if (Orderings.IsPath(possibleThreat, clink.Head))
-                    {
-                        continue;
-                    }
-                    Flaws.Add(new ThreatenedLinkFlaw(clink, possibleThreat));
-                }
-
-
-            }
-        }
+        //            Flaws.Add(new ThreatenedLinkFlaw(causalLink, substep));
+        //        }
+        //    }
+        //}
 
 
         public void Repair(OpenCondition oc, IPlanStep repairStep)
@@ -655,6 +530,188 @@ namespace BoltFreezer.PlanTools
                 }
                 
                 Flaws.Add(new ThreatenedLinkFlaw(clink, step));
+            }
+        }
+
+        public void RepairWithComposite(OpenCondition oc, CompositePlanStep repairStep)
+        {
+
+            var needStep = Find(oc.step);
+            if (!needStep.Name.Equals("DummyGoal") && !needStep.Name.Equals("DummyInit"))
+                needStep.Fulfill(oc.precondition);
+
+            orderings.Insert(repairStep.GoalStep as IPlanStep, needStep);
+            //this.ID += string.Format("(^Orl[{0},{1}])", repairStep.GoalStep.ID, needStep.ID);
+
+            // Causal Link between repair step's goal condition and need step.
+            var clink = new CausalLink<IPlanStep>(oc.precondition as Predicate, repairStep.GoalStep as IPlanStep, needStep);
+            causalLinks.Add(clink);
+
+            foreach (var step in Steps)
+            {
+
+                if (step.ID == repairStep.ID || step.ID == needStep.ID)
+                {
+                    continue;
+                }
+                if (!CacheMaps.IsThreat(oc.precondition, step))
+                {
+                    continue;
+                }
+
+                if (step.Height > 0)
+                {
+
+                    // we need to check that this step's goal step
+                    var stepAsComp = step as CompositePlanStep;
+
+
+                    if (decomplinks.OnDecompPath(clink.Head, step.ID))
+                    {
+                        // must be ordered within 
+                        if (Orderings.IsPath(clink.Tail, stepAsComp.GoalStep))
+                        {
+                            // already tucked into Q's borders
+                            continue;
+                        }
+
+                        if (!decomplinks.OnDecompPath(clink.Tail, step.ID))
+                        {
+                            // Special Case is when clink.Tail is goal step. Then we cannot tuck clink.Tail into borders.
+                            if (clink.Tail.Equals(goalStep))
+                            {
+                                // We want to end this plan's existence, so we add a threat that cannot be resolved.
+                                Flaws.Add(new ThreatenedLinkFlaw(clink, step));
+                                continue;
+                            }
+                            // Q --> s -p-> t, not p in eff(Q), not Q --> t
+                            // then, need to tuck t into Q's borders.
+
+                            var tailRoot = GetStepByID(decomplinks.GetRoot(clink.Tail)) as CompositePlanStep;
+                            Orderings.Insert(tailRoot.GoalStep, stepAsComp.InitialStep);
+                            //this.ID += string.Format("(^Od[{0},{1}])", tailRoot.GoalStep.ID, stepAsComp.InitialStep.ID);
+                        }
+
+                        continue;
+                    }
+
+                    if (decomplinks.OnDecompPath(clink.Tail, step.ID))
+                    {
+                        // step cannot threaten
+                        continue;
+                    }
+
+
+                    // step is a threat to need precondition
+                    if (Orderings.IsPath(clink.Tail, stepAsComp.InitialStep))
+                    {
+                        continue;
+                    }
+                    if (Orderings.IsPath(stepAsComp.GoalStep, repairStep.InitialStep as IPlanStep))
+                    {
+                        continue;
+                    }
+
+
+                    Flaws.Add(new ThreatenedLinkFlaw(clink, stepAsComp));
+                    // Flaws.Add(new ThreatenedLinkFlaw(clink, compInit));
+                }
+
+                else
+                {
+                    // is it possible that step is a sub-step of repair step? Yes it is.
+                    if (decomplinks.OnDecompPath(step, repairStep.ID))
+                    {
+                        // but, there's nothing we can do about it; and all links to repairStep.GoalStep are there to be threatened
+                        continue;
+                    }
+
+                    // step is a threat to need precondition
+                    if (Orderings.IsPath(needStep, step))
+                    {
+                        continue;
+                    }
+                    if (Orderings.IsPath(step, repairStep.InitialStep as IPlanStep))
+                    {
+                        continue;
+                    }
+
+                    Flaws.Add(new ThreatenedLinkFlaw(clink, step));
+                }
+
+            }
+        }
+
+        public new void DetectThreats(IPlanStep possibleThreat)
+        {
+            CompositePlanStep possibleThreatComposite = new CompositePlanStep();
+            if (possibleThreat.Height > 0)
+            {
+                possibleThreatComposite = possibleThreat as CompositePlanStep;
+            }
+
+            foreach (var clink in causalLinks)
+            {
+
+                if (!CacheMaps.IsThreat(clink.Predicate, possibleThreat))
+                {
+                    continue;
+                }
+
+                if (possibleThreat.Height > 0)
+                {
+
+                    if (decomplinks.OnDecompPath(clink.Head, possibleThreat.ID))
+                    {
+                        // must be ordered within 
+                        if (Orderings.IsPath(clink.Tail, possibleThreatComposite.GoalStep))
+                        {
+                            // already tucked into Q's borders
+                            continue;
+                        }
+
+                        if (!decomplinks.OnDecompPath(clink.Tail, possibleThreat.ID))
+                        {
+                            // Q --> s -p-> t, not p in eff(Q), not Q --> t
+                            // then, need to tuck t into Q's borders.
+                            var tailRoot = GetStepByID(decomplinks.GetRoot(clink.Tail)) as CompositePlanStep;
+                            Orderings.Insert(tailRoot.GoalStep, possibleThreatComposite.InitialStep);
+                            //this.ID += string.Format("(^Od2[{0},{1}])", tailRoot.GoalStep.ID, possibleThreatComposite.InitialStep.ID);
+                        }
+
+                        continue;
+                    }
+
+                    if (decomplinks.OnDecompPath(clink.Tail, possibleThreat.ID))
+                    {
+                        continue;
+                    }
+
+                    if (Orderings.IsPath(clink.Tail, possibleThreatComposite.InitialStep))
+                    {
+                        continue;
+                    }
+                    if (Orderings.IsPath(possibleThreatComposite.GoalStep, clink.Head))
+                    {
+                        continue;
+                    }
+                    Flaws.Add(new ThreatenedLinkFlaw(clink, possibleThreat));
+                }
+                else
+                {
+                    // don't need to check decomp paths, because causal links and threat are all primitive. 
+                    if (Orderings.IsPath(clink.Tail, possibleThreat))
+                    {
+                        continue;
+                    }
+                    if (Orderings.IsPath(possibleThreat, clink.Head))
+                    {
+                        continue;
+                    }
+                    Flaws.Add(new ThreatenedLinkFlaw(clink, possibleThreat));
+                }
+
+
             }
         }
 
@@ -726,81 +783,7 @@ namespace BoltFreezer.PlanTools
             return true;
         }
 
-        public void RepairWithComposite(OpenCondition oc, CompositePlanStep repairStep)
-        {
-            // oc = <needStep, needPrecond>. Need to find needStep in plan, because open conditions have been mutated before arrival.
-            var needStep = Find(oc.step);
-            if (!needStep.Name.Equals("DummyGoal") && !needStep.Name.Equals("DummyInit"))
-                needStep.Fulfill(oc.precondition);
-
-            orderings.Insert(repairStep.GoalStep as IPlanStep, needStep);
-            var clink = new CausalLink<IPlanStep>(oc.precondition as Predicate, repairStep.GoalStep as IPlanStep, needStep);
-            causalLinks.Add(clink);
-
-            foreach (var step in Steps)
-            {
-                
-                if (step.ID == repairStep.ID || step.ID == needStep.ID)
-                {
-                    continue;
-                }
-                if (!CacheMaps.IsThreat(oc.precondition, step))
-                {
-                    continue;
-                }
-
-                if (step.Height > 0)
-                {
-
-                    // we need to check that this step's goal step
-                    var stepAsComp = step as CompositePlanStep;
-
-                    if (stepAsComp.SubSteps.Contains(clink.Head) || stepAsComp.SubSteps.Contains(clink.Tail))
-                    {
-                        continue;
-                        // replace this with... is Decompositional Link-based path from step to clink.Head or clink.Tail
-                    }
-
-                    var compGoal = stepAsComp.GoalStep;
-                    var compInit = stepAsComp.InitialStep;
-
-                    if (clink.Head.ID == compInit.ID || clink.Tail.ID == compInit.ID || clink.Head.ID == compGoal.ID || clink.Tail.ID == compGoal.ID)
-                    {
-                        continue;
-                    }
-
-                    // step is a threat to need precondition
-                    if (Orderings.IsPath(needStep, compInit))
-                    {
-                        continue;
-                    }
-                    if (Orderings.IsPath(compGoal, repairStep.InitialStep as IPlanStep))
-                    {
-                        continue;
-                    }
-
-                    
-                    Flaws.Add(new ThreatenedLinkFlaw(clink, stepAsComp));
-                  //  Flaws.Add(new ThreatenedLinkFlaw(clink, compInit));
-                }
-
-                else
-                {
-                    // step is a threat to need precondition
-                    if (Orderings.IsPath(needStep, step))
-                    {
-                        continue;
-                    }
-                    if (Orderings.IsPath(step, repairStep.InitialStep as IPlanStep))
-                    {
-                        continue;
-                    }
-                    Flaws.Add(new ThreatenedLinkFlaw(clink, step));
-                }
-                
-            }
-        }
-
+       
         // Return the first state of the plan.
         public State GetFirstState ()
         {
@@ -881,7 +864,7 @@ namespace BoltFreezer.PlanTools
             Flawque flawList = flaws.Clone() as Flawque;
 
             //return new Plan(newSteps, newInitial, newGoal, newInitialStep, newGoalStep, newOrderings, newLinks, flawList);
-            var p =  new Plan(newSteps, Initial, Goal, newInitialStep, newGoalStep, newOrderings, newLinks, flawList)
+            var p =  new Plan(newSteps, Initial, Goal, newInitialStep, newGoalStep, newOrderings, newLinks, decomplinks.Clone(), flawList)
             {
                 Hdepth = hdepth,
                 Decomps = decomps
