@@ -140,9 +140,7 @@
     <Compile Include="PriorityQueue\SimplePriorityQueue.cs" />
     <Compile Include="PriorityQueue\StablePriorityQueue.cs" />
     <Compile Include="PriorityQueue\StablePriorityQueueNode.cs" />
-    <Compile Include="StateSpace\PlanSimulator.cs" />
-    <Compile Include="StateSpace\StateSpaceEdge.cs" />
-    <Compile Include="StateSpace\StateSpaceNode.cs" />
+    <Compile Include="PlanSpace\PlanSimulator.cs" />
     <Compile Include="Utilities\EnumerableExtension.cs" />
     <Compile Include="Utilities\Logger.cs" />
     <Compile Include="Utilities\PredicateComparer.cs" />

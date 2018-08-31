@@ -134,44 +134,6 @@ namespace BoltFreezer.PlanTools
             return best_flaw;
         }
 
-        // When we add a new step, update cndts and risks (Current never called)
-        public void UpdateFlaws(IPlan plan, IPlanStep action)
-        {
-            if (action.Height > 0)
-            {
-                //var comp = action as ICompositePlanStep;
-                //foreach (var substep in comp.SubSteps)
-                //{
-                //    if (substep.Height == 0)
-                //    {
-                //        var stepRef = plan.Find(substep as IPlanStep);
-                //        UpdateFlaws(plan, stepRef);
-                //    }
-                //    else
-                //        UpdateFlaws(plan, substep);
-                //}
-                return;
-
-            }
-            else
-            {
-                foreach (var oc in OpenConditions.ToList())
-                {
-                    // ignore any open conditions that cannot possibly be affected by this action's effects, such as those occurring after
-                    if (plan.Orderings.IsPath(oc.step, action))
-                        continue;
-
-                    if (CacheMaps.IsCndt(oc.precondition, action))
-                        //if (action.Effects.Contains(oc.precondition))
-                        oc.cndts += 1;
-
-                    if (CacheMaps.IsThreat(oc.precondition, action))
-                        //if (action.Effects.Any(x => oc.precondition.IsInverse(x)))
-                        oc.risks += 1;
-                }
-            }
-        }
-
         // Clone of Flawque requires clone of individual flaws because these have mutable properties
         public Object Clone()
         {

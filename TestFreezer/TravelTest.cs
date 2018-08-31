@@ -6,7 +6,6 @@ using BoltFreezer.Interfaces;
 using BoltFreezer.PlanSpace;
 using BoltFreezer.PlanTools;
 using BoltFreezer.Utilities;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -29,6 +28,17 @@ namespace TestFreezer
             else
                 PF.Deserialize();
             return PF;
+        }
+
+        public static Tuple<Domain, Problem> JustReadDomainAndProblem(int whichProblem)
+        {
+            var domainName = "travel-test";
+            var domainDirectory = Parser.GetTopDirectory() + @"Benchmarks\" + domainName + @"\domain.pddl";
+            var domain = Parser.GetDomain(Parser.GetTopDirectory() + @"Benchmarks\" + domainName + @"\domain.pddl", PlanType.PlanSpace);
+            var problem = Parser.GetProblem(Parser.GetTopDirectory() + @"Benchmarks\" + domainName + @"\travel-" + whichProblem.ToString() + @".pddl");
+
+            return new Tuple<Domain, Problem>(domain, problem);
+            
         }
 
 
@@ -225,6 +235,40 @@ namespace TestFreezer
             return decomps;
         }
 
+        public static List<IOperator> RemoveIrrelevantActions(State initial)
+        {
+            var replacedActions = new List<IOperator>();
+            foreach (var ga in GroundActionFactory.GroundActions)
+            {
+                // If this action has a precondition with name adjacent this is not in initial state, then it's impossible. True ==> impossible. False ==> OK!
+                var staticPreconditions = ga.Preconditions.Where(pre => GroundActionFactory.Statics.Contains(pre));
+
+                var isImpossible = staticPreconditions.Any(pre => !initial.InState(pre));
+                if (isImpossible)
+                    continue;
+                replacedActions.Add(ga);
+            }
+            return replacedActions;
+        }
+
+        public static void RemoveStaticPreconditions(List<IOperator> groundActions)
+        {
+            foreach (var ga in groundActions)
+            {
+                List<IPredicate> newPreconds = new List<IPredicate>();
+                foreach (var precon in ga.Preconditions)
+                {
+                    if (GroundActionFactory.Statics.Contains(precon))
+                    {
+                        continue;
+                    }
+                    newPreconds.Add(precon);
+                }
+
+                ga.Preconditions = newPreconds;
+            }
+        }
+
         public static IPlan ReadAndCompile(bool serializeIt, int whichProblem)
         {
             Parser.path = @"D:\documents\frostbow\boltfreezer\";
@@ -232,7 +276,21 @@ namespace TestFreezer
             GroundActionFactory.Reset();
             CacheMaps.Reset();
 
-            var pfreeze = ReadDomainAndProblem(serializeIt, whichProblem);
+            Tuple<Domain, Problem> problemSpec = JustReadDomainAndProblem(whichProblem);
+            var domain = problemSpec.First;
+            var problem = problemSpec.Second;
+
+            GroundActionFactory.PopulateGroundActions(domain, problem);
+            GroundActionFactory.DetectStatics();
+            var subsetOfOps = RemoveIrrelevantActions(new State(problem.Initial));
+            GroundActionFactory.Reset();
+            GroundActionFactory.GroundActions = subsetOfOps;
+            GroundActionFactory.GroundLibrary = subsetOfOps.ToDictionary(item => item.ID, item => item);
+            RemoveStaticPreconditions(GroundActionFactory.GroundActions);
+
+            CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
+            CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, problem.Goal);
+            CacheMaps.CacheAddReuseHeuristic(new State(problem.Initial));
 
             var decomps = ReadDecompositions();
             var composite = AddCompositeOperator();
@@ -241,14 +299,14 @@ namespace TestFreezer
             CompositeMethods[composite] = decomps;
             Composite.ComposeHTNs(2, CompositeMethods);
 
+            // Cache links, now not bothering with statics
+            CacheMaps.Reset();
             CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
+            CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, problem.Goal);
+            CacheMaps.PrimaryEffectHack(new State(problem.Initial) as IState);
 
-            var initPlan = PlanSpacePlanner.CreateInitialPlan(pfreeze);
 
-            CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, initPlan.Goal.Predicates);
-
-            GroundActionFactory.DetectStatics();
-
+            var initPlan = PlanSpacePlanner.CreateInitialPlan(problem);
             return initPlan;
         }
 

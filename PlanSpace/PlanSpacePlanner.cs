@@ -75,6 +75,15 @@ namespace BoltFreezer.PlanSpace
             return initialPlan;
         }
 
+        public static IPlan CreateInitialPlan(Problem problem)
+        {
+            var initialPlan = new Plan(new State(problem.Initial) as IState, new State(problem.Goal) as IState);
+            foreach (var goal in problem.Goal)
+                initialPlan.Flaws.Add(initialPlan, new OpenCondition(goal, initialPlan.GoalStep as IPlanStep));
+            initialPlan.Orderings.Insert(initialPlan.InitialStep, initialPlan.GoalStep);
+            return initialPlan;
+        }
+
         public void LogTime(string operationName, long timeItTook)
         {
             timeCollections.Add(new Tuple<string, string>(operationName, timeItTook.ToString()));
@@ -87,10 +96,6 @@ namespace BoltFreezer.PlanSpace
             if (!plan.Orderings.HasCycle())
             {
                 LogTime("checkOrderings", watch.ElapsedMilliseconds - before);
-                //if (Visited.Contains(plan as Plan))
-                //{
-                //    return;
-                //}
 
                 //Visited.Add(plan as Plan);
                 var score = Score(plan);
@@ -135,6 +140,9 @@ namespace BoltFreezer.PlanSpace
                     continue;
 
                 var planClone = plan.Clone() as IPlan;
+
+                planClone.ID += "a";
+
                 IPlanStep newStep;
                 if (cndt.Height > 0)
                 {
@@ -152,20 +160,18 @@ namespace BoltFreezer.PlanSpace
                         Depth = oc.step.Depth
                     };
                 }
-                //newStep.Height = cndt.Height;
+
+                // For debugging
+                //planClone.ID += "(" + GroundActionFactory.GroundActions.IndexOf(newStep.Action) + ")";
 
                 planClone.Insert(newStep);
                 planClone.Repair(oc, newStep);
-
-
-                // check if inserting new Step (with orderings given by Repair) add cndts/risks to existing open conditions, affecting their status in the heap
-                //planClone.Flaws.UpdateFlaws(planClone, newStep);
 
                 if (oc.isDummyGoal)
                 {
                     if (newStep.Height > 0)
                     {
-                        var compNewStep = newStep as ICompositePlanStep;
+                        var compNewStep = newStep as CompositePlanStep;
                         planClone.Orderings.Insert(oc.step.InitCndt, compNewStep.InitialStep);
                     }
                     else
@@ -173,6 +179,7 @@ namespace BoltFreezer.PlanSpace
                         planClone.Orderings.Insert(oc.step.InitCndt, newStep);
                     }
                 }
+
                 planClone.DetectThreats(newStep);
                 Insert(planClone);
             }
@@ -185,6 +192,7 @@ namespace BoltFreezer.PlanSpace
             {
                 var planClone = plan.Clone() as IPlan;
                 planClone.Repair(oc, planClone.InitialStep);
+                planClone.ID += "ri";
                 Insert(planClone);
             }
 
@@ -215,6 +223,7 @@ namespace BoltFreezer.PlanSpace
 
                         var planClone = plan.Clone() as IPlan;
                         planClone.Repair(oc, stepAsComposite.GoalStep);
+                        planClone.ID += "rc";
                         Insert(planClone);
                     }
                     continue;
@@ -226,6 +235,7 @@ namespace BoltFreezer.PlanSpace
                     {
                         var planClone = plan.Clone() as IPlan;
                         planClone.Repair(oc, step);
+                        planClone.ID += "r_";
                         Insert(planClone);
                         continue;
                     }
@@ -238,6 +248,7 @@ namespace BoltFreezer.PlanSpace
 
                         var planClone = plan.Clone() as IPlan;
                         planClone.Repair(oc, step);
+                        planClone.ID += "rp";
                         Insert(planClone);
                     }
                 }
@@ -254,14 +265,22 @@ namespace BoltFreezer.PlanSpace
                 if (!plan.Orderings.IsPath(cps.InitialStep, cl.Tail))
                 {
                     var promote = plan.Clone() as IPlan;
-                    promote.ID += "p";
+                    promote.ID += "pc";
+                    if (cl.Tail.Name.Equals("DummyInit"))
+                    {
+                        promote.Orderings.Insert(cl.Tail.GoalCndt, cps.InitialStep);
+                    }
                     promote.Orderings.Insert(cl.Tail, cps.InitialStep);
                     Insert(promote);
                 }
                 if (!plan.Orderings.IsPath(cl.Head, cps.GoalStep))
                 {
                     var demote = plan.Clone() as IPlan;
-                    demote.ID += "d";
+                    demote.ID += "dc";
+                    if (cl.Head.Name.Equals("DummyGoal"))
+                    {
+                        demote.Orderings.Insert(cps.GoalStep, cl.Head.InitCndt);
+                    }
                     demote.Orderings.Insert(cps.GoalStep, cl.Head);
                     Insert(demote);
                 }
@@ -273,6 +292,10 @@ namespace BoltFreezer.PlanSpace
                 {
                     var promote = plan.Clone() as IPlan;
                     promote.ID += "p";
+                    if (cl.Tail.Name.Equals("DummyInit"))
+                    {
+                        promote.Orderings.Insert(cl.Tail.GoalCndt, threat);
+                    }
                     promote.Orderings.Insert(cl.Tail, threat);
                     Insert(promote);
                 }
@@ -282,6 +305,10 @@ namespace BoltFreezer.PlanSpace
                 {
                     var demote = plan.Clone() as IPlan;
                     demote.ID += "d";
+                    if (cl.Head.Name.Equals("DummyGoal"))
+                    {
+                        demote.Orderings.Insert(threat, cl.Head.InitCndt);
+                    }
                     demote.Orderings.Insert(threat, cl.Head);
                     Insert(demote);
                 }

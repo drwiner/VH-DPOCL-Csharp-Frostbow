@@ -239,7 +239,7 @@ namespace BoltFreezer.PlanTools
             var IDMap = new Dictionary<int, IPlanStep>();
 
             // Clone, Add, and Order Initial step
-            var dummyInit = newStep.InitialStep.Clone() as IPlanStep;
+            var dummyInit = new PlanStep(newStep.InitialStep) as IPlanStep;
             dummyInit.InitCndt = newStep.InitialStep.InitCndt;
 
             dummyInit.Depth = newStep.Depth;
@@ -247,9 +247,9 @@ namespace BoltFreezer.PlanTools
             steps.Add(dummyInit);
             orderings.Insert(InitialStep, dummyInit);
             orderings.Insert(dummyInit, GoalStep);
-            
+
             // Clone, Add, and order Goal step
-            var dummyGoal = newStep.GoalStep.Clone() as IPlanStep;
+            var dummyGoal = new PlanStep(newStep.GoalStep) as IPlanStep;
             dummyGoal.Depth = newStep.Depth;
             dummyGoal.InitCndt = dummyInit;
             dummyGoal.GoalCndt = newStep.GoalStep.GoalCndt;
@@ -446,40 +446,6 @@ namespace BoltFreezer.PlanTools
             return Steps.Single(s => s.Equals(stepClonedFromOpenCondition));
         }
 
-        //// This method is used when a composite step may threaten a causal link.
-        //protected void DecomposeThreat(CausalLink<IPlanStep> causalLink, ICompositePlanStep ThisIsAThreat)
-        //{
-        //    //if (CacheMaps.IsThreat(causalLink.Predicate, ThisIsAThreat))
-        //    //{
-        //    //    Flaws.Add(new ThreatenedLinkFlaw(causalLink, ThisIsAThreat.GoalStep));
-        //    //    return;
-        //    //}
-
-        //    foreach (var substep in ThisIsAThreat.SubSteps)
-        //    {
-
-        //        if (substep.Height > 0)
-        //        {
-        //            //var compositeSubStep = substep as ICompositePlanStep;
-        //            DecomposeThreat(causalLink, substep as ICompositePlanStep);
-        //        }
-        //        else
-        //        {
-        //            if (substep.Equals(causalLink.Head) || substep.Equals(causalLink.Tail))
-        //            {
-        //                continue;
-        //            }
-        //            if (!CacheMaps.IsThreat(causalLink.Predicate, substep))
-        //            {
-        //                continue;
-        //            }
-
-        //            Flaws.Add(new ThreatenedLinkFlaw(causalLink, substep));
-        //        }
-        //    }
-        //}
-
-
         public void Repair(OpenCondition oc, IPlanStep repairStep)
         {
             if (repairStep.Height > 0)
@@ -502,7 +468,7 @@ namespace BoltFreezer.PlanTools
                 needStep.Fulfill(oc.precondition);
 
             orderings.Insert(repairStep, needStep);
-            var clink = new CausalLink<IPlanStep>(oc.precondition as Predicate, repairStep, needStep);
+            var clink = new CausalLink<IPlanStep>(oc.precondition, repairStep, needStep);
             causalLinks.Add(clink);
 
             foreach (var step in Steps)
@@ -544,7 +510,7 @@ namespace BoltFreezer.PlanTools
             //this.ID += string.Format("(^Orl[{0},{1}])", repairStep.GoalStep.ID, needStep.ID);
 
             // Causal Link between repair step's goal condition and need step.
-            var clink = new CausalLink<IPlanStep>(oc.precondition as Predicate, repairStep.GoalStep as IPlanStep, needStep);
+            var clink = new CausalLink<IPlanStep>(oc.precondition, repairStep.GoalStep as IPlanStep, needStep);
             causalLinks.Add(clink);
 
             foreach (var step in Steps)
@@ -642,7 +608,7 @@ namespace BoltFreezer.PlanTools
             }
         }
 
-        public new void DetectThreats(IPlanStep possibleThreat)
+        public void DetectThreats(IPlanStep possibleThreat)
         {
             CompositePlanStep possibleThreatComposite = new CompositePlanStep();
             if (possibleThreat.Height > 0)
