@@ -149,10 +149,10 @@ namespace BoltFreezer.PlanTools
                 return -10000f - plan.Steps.Count;
             }
 
-            //if (plan.Flaws.Count == 0)
-            //{
-            //    return -100f - plan.Steps.Count;
-            //}
+            if (plan.Flaws.Count == 0)
+            {
+                return -100f - plan.Steps.Count;
+            }
 
             return HMethod.Heuristic(plan) +
                 ((plan.Steps.Count - (3*plan.Decomps)) /
@@ -163,14 +163,14 @@ namespace BoltFreezer.PlanTools
     public class E3Star : ISelection
     {
         private IHeuristic HMethod;
-        protected int weight = 8;
+        protected float weight = 8f;
 
         public E3Star(IHeuristic hmethod)
         {
             HMethod = hmethod;
         }
 
-        public E3Star(IHeuristic hmethod, int _weight)
+        public E3Star(IHeuristic hmethod, float _weight)
         {
             HMethod = hmethod;
             weight = _weight;

@@ -318,7 +318,7 @@ namespace BoltFreezer.PlanTools
                     decomplinks.Insert(newStep, newsubstep);
 
                     InsertPrimitiveSubstep(newsubstep, dummyInit.Effects, false);
-                    
+
                     //if (newsubstep.Depth > Hdepth)
                     //{
                     //    Hdepth = newsubstep.Depth;

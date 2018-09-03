@@ -18,7 +18,7 @@ namespace TestFreezer
 
         public static void RunPlanner(IPlan initPi, ISearch SearchMethod, ISelection SelectMethod, int k, float cutoff, string directoryToSaveTo, int problem)
         {
-            var POP = new PlanSpacePlanner(initPi, SelectMethod, SearchMethod, true)
+            var POP = new PlanSpacePlanner(initPi, SelectMethod, SearchMethod, false)
             {
                 directory = directoryToSaveTo,
                 problemNumber = problem,
@@ -72,50 +72,55 @@ namespace TestFreezer
 
         public static void RunTravelTestInternal()
         {
-            var cutoff = 60000f;
+            var cutoff = 600000f;
             var k = 1;
 
-            var values = new List<int>() { 1, 2, 4, 6, 8, 16 };
+            var values = new List<float>() {0.5f, 1, 2, 4, 6, 8, 16 };
             var directory = @"D:\Documents\Frostbow\Benchmarks\travel-test\Results\";
             System.IO.Directory.CreateDirectory(directory);
 
-            for (int i = 1; i < 9; i++)
+            for (int i = 7; i < 8; i++)
             {
                 var initPlan = TravelTest.ReadAndCompile(true, i);
-                RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E0(new AddReuseHeuristic()), k, cutoff, directory, i);
+                RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3Star(new AddReuseHeuristic(), 6f), k, cutoff, directory, i);
+
+                // RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E0(new AddReuseHeuristic()), k, cutoff, directory, i);
 
 
                 //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E1(new AddReuseHeuristic()), k, cutoff, directory, i);
                 //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E2(new AddReuseHeuristic()), k, cutoff, directory, i);
-                RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3(new AddReuseHeuristic()), k, cutoff, directory, i);
+                //  RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3(new AddReuseHeuristic()), k, cutoff, directory, i);
                 //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E4(new AddReuseHeuristic()), k, cutoff, directory, i);
                 //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E5(new AddReuseHeuristic()), k, cutoff, directory, i);
                 //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E6(new AddReuseHeuristic()), k, cutoff, directory, i);
 
-                RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E0(new NumOpenConditionsHeuristic()), k, cutoff, directory, i);
+                //  RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E0(new NumOpenConditionsHeuristic()), k, cutoff, directory, i);
                 //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E1(new NumOpenConditionsHeuristic()), k, cutoff, directory, i);
                 //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E2(new NumOpenConditionsHeuristic()), k, cutoff, directory, i);
-                RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3(new NumOpenConditionsHeuristic()), k, cutoff, directory, i);
+                //      RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3(new NumOpenConditionsHeuristic()), k, cutoff, directory, i);
                 //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E4(new NumOpenConditionsHeuristic()), k, cutoff, directory, i);
                 //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E5(new NumOpenConditionsHeuristic()), k, cutoff, directory, i);
                 //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E6(new NumOpenConditionsHeuristic()), k, cutoff, directory, i);
 
-                RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E0(new ZeroHeuristic()), k, cutoff, directory, i);
+                //    RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E0(new ZeroHeuristic()), k, cutoff, directory, i);
                 //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E1(new ZeroHeuristic()), k, cutoff, directory, i);
                 //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E2(new ZeroHeuristic()), k, cutoff, directory, i);
 
-                RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3(new ZeroHeuristic()), k, cutoff, directory, i);
+                // RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3(new ZeroHeuristic()), k, cutoff, directory, i);
+                //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3Star(new AddReuseHeuristic(), .5f), k, cutoff, directory, i);
+                //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3Star(new ZeroHeuristic(), .5f), k, cutoff, directory, i);
+                //RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3Star(new NumOpenConditionsHeuristic(), .5f), k, cutoff, directory, i);
 
 
-                foreach (var v in values)
-                {
-                    RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3Star(new ZeroHeuristic(), v), k, cutoff, directory, i);
-                    RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3Star(new NumOpenConditionsHeuristic(), v), k, cutoff, directory, i);
-                    RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3Star(new AddReuseHeuristic(), v), k, cutoff, directory, i);
-                }
+                //foreach (var v in values)
+                //{
+                //    RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3Star(new ZeroHeuristic(), v), k, cutoff, directory, i);
+                //    RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3Star(new NumOpenConditionsHeuristic(), v), k, cutoff, directory, i);
+                //    RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3Star(new AddReuseHeuristic(), v), k, cutoff, directory, i);
+                //}
 
                 //RunPlanner(initPlan.Clone() as IPlan, new DFS(), new Nada(new ZeroHeuristic()), k, cutoff, directory, i);
-                //RunPlanner(initPlan.Clone() as IPlan, new BFS(), new Nada(new ZeroHeuristic()), k, cutoff, directory, i);
+                // RunPlanner(initPlan.Clone() as IPlan, new BFS(), new Nada(new ZeroHeuristic()), k, cutoff, directory, i);
             }
         }
 

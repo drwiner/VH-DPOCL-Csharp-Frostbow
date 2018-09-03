@@ -102,7 +102,7 @@ namespace BoltFreezer.PlanSpace
                 var score = Score(plan);
                 if (score > 6000)
                 {
-                    Console.WriteLine(score);
+                    //Console.WriteLine(score);
                     // reduce size of frontier
                     return;
                 }
@@ -153,7 +153,7 @@ namespace BoltFreezer.PlanSpace
                     {
                         Depth = oc.step.Depth
                     };
-                    planClone.Hdepth += compCndt.SubSteps.Count;
+                    //planClone.Hdepth += compCndt.SubSteps.Count; // this is done now in beginning of Insert Decomp
                 }
                 else
                 {
