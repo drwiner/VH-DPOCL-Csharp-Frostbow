@@ -337,6 +337,7 @@ namespace BoltFreezer.PlanTools
 
         public Composite PseudoClone()
         {
+
             var newPreconds = new List<IPredicate>();
             foreach(var precon in base.Preconditions)
             {
@@ -349,7 +350,12 @@ namespace BoltFreezer.PlanTools
             }
 
             var newBase = new Operator(base.Predicate.Clone() as Predicate, newPreconds, newEffects);
-            return new Composite(newBase, InitialStep.Clone() as IPlanStep, GoalStep.Clone() as IPlanStep, SubSteps, SubOrderings, SubLinks)
+            var init = InitialStep.Clone() as IPlanStep;
+            init.Action = init.Action.Clone() as Operator;
+            var goal = GoalStep.Clone() as IPlanStep;
+            goal.Action = goal.Action.Clone() as Operator;
+
+            return new Composite(newBase, init, goal, SubSteps, SubOrderings, SubLinks)
             {
                 Height = this.Height,
                 NonEqualities = this.NonEqualities
@@ -362,7 +368,7 @@ namespace BoltFreezer.PlanTools
             var init = InitialStep.Clone() as IPlanStep;
             var goal = GoalStep.Clone() as IPlanStep;
 
-            return new Composite(op, init, goal, SubSteps, SubOrderings, SubLinks)
+            return new Composite(op, init, goal, SubSteps.ToList(), SubOrderings.ToList(), SubLinks.ToList())
             {
                 Height = this.Height,
                 NonEqualities = this.NonEqualities
