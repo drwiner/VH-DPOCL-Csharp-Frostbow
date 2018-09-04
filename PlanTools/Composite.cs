@@ -99,9 +99,9 @@ namespace BoltFreezer.PlanTools
         {
             var numUnBoundArgs = 0;
 
-            subSteps = decomp.SubSteps;
-            subOrderings = decomp.SubOrderings;
-            subLinks = decomp.SubLinks;
+            subSteps = decomp.SubSteps.ToList();
+            subOrderings = decomp.SubOrderings.ToList();
+            subLinks = decomp.SubLinks.ToList();
 
             // For each variable term, find and substitute decomp term
             foreach (var term in Terms)
@@ -135,6 +135,7 @@ namespace BoltFreezer.PlanTools
                     term.Constant = compTerm.Constant;
                 }
             }
+            
             foreach (var precon in GoalStep.Preconditions)
             {
                 foreach (var term in precon.Terms)
@@ -326,7 +327,9 @@ namespace BoltFreezer.PlanTools
                     }
                     // For each newly created composite step, add to the library.
                     foreach (var comp in compList)
-                    { 
+                    {
+                        comp.GoalStep.OpenConditions = comp.GoalStep.Preconditions;
+                        
                         GroundActionFactory.InsertOperator(comp as IOperator);
                     }
                 }

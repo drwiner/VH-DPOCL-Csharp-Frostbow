@@ -72,16 +72,17 @@ namespace TestFreezer
 
         public static void RunTravelTestInternal()
         {
-            var cutoff = 600000f;
+            var cutoff = 60000f;
             var k = 1;
 
             var values = new List<float>() {0.5f, 1, 2, 4, 6, 8, 16 };
             var directory = @"D:\Documents\Frostbow\Benchmarks\travel-test\Results\";
             System.IO.Directory.CreateDirectory(directory);
 
-            for (int i = 7; i < 8; i++)
+            for (int i = 1; i < 9; i++)
             {
                 var initPlan = TravelTest.ReadAndCompile(true, i);
+                RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3Star(new AddReuseHeuristic(), .5f), k, cutoff, directory, i);
                 RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E3Star(new AddReuseHeuristic(), 6f), k, cutoff, directory, i);
 
                 // RunPlanner(initPlan.Clone() as IPlan, new ADstar(), new E0(new AddReuseHeuristic()), k, cutoff, directory, i);

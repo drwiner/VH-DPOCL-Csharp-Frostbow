@@ -67,6 +67,18 @@ namespace BoltFreezer.PlanTools
             subOrderings = comp.SubOrderings.ToList();
         }
 
+        public CompositePlanStep(Composite comp) : base(comp.Clone() as IOperator)
+        {
+            compositeAction = comp.Clone() as IComposite;
+            initialStep = comp.InitialStep.Clone() as IPlanStep;
+            goalStep = comp.GoalStep.Clone() as IPlanStep;
+
+            // Do not bother changing the PlanStep skin of these, as this has to happen during insertion
+            subSteps = comp.SubSteps.ToList();
+            subLinks = comp.SubLinks.ToList();
+            subOrderings = comp.SubOrderings.ToList();
+        }
+
         public CompositePlanStep(ICompositePlanStep comp) : base(comp as IPlanStep)
         {
             compositeAction = comp.Action as IComposite;
